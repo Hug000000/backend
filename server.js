@@ -49,14 +49,14 @@ app.use('/message', reqMessage);
 app.use('/trajets', reqTrajet);
 app.use('/ville', reqVille);
 
-// Le serveur HTTP écoute sur le port 3000
-const port = process.env.PORT || 3000;
+// Le serveur HTTP écoute sur le port PORT
+const port = process.env.PORT;
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
 
-// Le serveur WebSocket écoute sur le port 3001
-const wsPort = process.env.WS_PORT || 3001;
+// Le serveur WebSocket écoute sur le port WS_PORT
+const wsPort = process.env.WS_PORT;
 const wsServer = http.createServer();
 wsServer.listen(wsPort, () => {
   console.log(`WebSocket Server running on http://localhost:${wsPort}`);
