@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modèle Prisma pour la table "Utilisateur"
+model Utilisateur {
+  idutilisateur  Int        @id @default(autoincrement())
+  nom            String
+  prenom         String
+  age            Int
+  username       String
+  numtel         String
+  photoprofil    Int?       @unique
+  photo          Photo?     @relation(name: "UserPhoto", fields: [photoprofil], references: [idphoto])
+  estadmin       Boolean
+  motdepasse     String
+  // Relations
+  voitures       Voiture[]
+  avisEnvoyes    Avis[]     @relation("Avisemetteur")
+  avisRecus      Avis[]     @relation("Avisdestinataire")
+  messagesEnvoyes Message[] @relation("Messageemetteur")
+  messagesRecus  Message[]  @relation("Messagedestinataire")
+  trajetsConduits Trajet[]
+  passagerTrajets EstPassager[]
+}
+
+// Modèle Prisma pour la table "Photo"
+model Photo {
+  idphoto      Int           @id @default(autoincrement())
+  image        String
+  utilisateur  Utilisateur?  @relation(name: "UserPhoto")
+}
+
+// Modèle Prisma pour la table "Ville"
+model Ville {
+  idville      Int          @id @default(autoincrement())
+  nom          String
+  trajetsDepart Trajet[]    @relation("villedepart")
+  trajetsArrivee Trajet[]   @relation("villearrivee")
+}
+
+// Modèle Prisma pour la table "Voiture"
+model Voiture {
+  marque         String
+  modele         String
+  couleur        String
+  plaqueimat     String       @id
+  idProprietaire Int
+  proprietaire   Utilisateur  @relation(fields: [idProprietaire], references: [idutilisateur])
+  trajets        Trajet[]     
+}
+
+// Modèle Prisma pour la table "Avis"
+model Avis {
+  idavis      Int            @id @default(autoincrement())
+  note        Int
+  date        DateTime
+  texte       String
+  idemetteur  Int
+  iddestinataire  Int
+  emetteur    Utilisateur   @relation("Avisemetteur", fields: [idemetteur], references: [idutilisateur])
+  destinataire    Utilisateur   @relation("Avisdestinataire", fields: [iddestinataire], references: [idutilisateur])
+}
+
+// Modèle Prisma pour la table "Message"
+model Message {
+  idmessage   Int            @id @default(autoincrement())
+  date        DateTime
+  texte       String
+  idemetteur  Int
+  iddestinataire  Int
+  emetteur    Utilisateur   @relation("Messageemetteur", fields: [idemetteur], references: [idutilisateur])
+  destinataire    Utilisateur   @relation("Messagedestinataire", fields: [iddestinataire], references: [idutilisateur])
+}
+
+// Modèle Prisma pour la table "Trajet"
+model Trajet {
+  idtrajet          Int         @id @default(autoincrement())
+  description       String
+  idvilledepart     Int
+  villedepart       Ville       @relation("villedepart", fields: [idvilledepart], references: [idville])
+  idvillearrivee    Int
+  villearrivee      Ville       @relation("villearrivee", fields: [idvillearrivee], references: [idville])
+  heuredepart       DateTime
+  heurearrivee      DateTime
+  prix              Float
+  idConducteur      Int
+  conducteur        Utilisateur @relation(fields: [idConducteur], references: [idutilisateur])
+  passagers         EstPassager[]
+  plaqueimatVoiture String
+  voiture           Voiture     @relation(fields: [plaqueimatVoiture], references: [plaqueimat])
+  placesDisponibles Int         
+}
+
+
+// Modèle Prisma pour la table "EstPassager"
+model EstPassager {
+  idestpassager Int         @id @default(autoincrement())
+  idTrajet      Int
+  idPassager    Int
+  trajet        Trajet      @relation(fields: [idTrajet], references: [idtrajet])
+  passager      Utilisateur @relation(fields: [idPassager], references: [idutilisateur])
+}
