@@ -32,7 +32,7 @@ const io = new Server(server, {
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors(//corsOptions));
+app.use(cors(/*corsOptions*/));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
