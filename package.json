@@ -8,7 +8,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.js",
     "seed": "node prisma/seed.js",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "start": "node server.js",
+    "start:dev": "dotenv -e .env.development -- node server.js",
+    "start:prod": "dotenv -e .env.production -- node server.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +29,7 @@
     "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
+    "dotenv-cli": "^7.4.2",
     "nodemon": "^2.0.7",
     "prisma": "^5.13.0"
   }

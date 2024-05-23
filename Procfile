@@ -1,1 +1,1 @@
-web: npx prisma migrate deploy && npm run seed && node server.js
+web: npx prisma migrate deploy && npm run seed && npm run start:prod

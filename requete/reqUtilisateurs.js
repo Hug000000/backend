@@ -516,7 +516,6 @@ router.delete('/:id/', verifyTokenAndGetAdminStatus, async (req, res) => {
         });
 
         // Suppression des voitures associées
-        console.log('Suppression des voitures associées');
         await prisma.voiture.deleteMany({
             where: { idProprietaire: parseInt(id) }
         });
