@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
         const cookieOptions = {
             httpOnly: true,
             sameSite: 'Lax',
-            secure: true,
+            secure: false,
         };
 
         res.cookie('token', token, cookieOptions);
