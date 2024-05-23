@@ -12,27 +12,27 @@ import reqVille from './requete/reqVille.js';
 import cors from 'cors';
 import 'dotenv/config';
 
-// // Configurer CORS avec des options personnalisées
-// const corsOptions = {
-//   origin: process.env.FRONT_URL,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-//   credentials: true
-// };
+// Configurer CORS avec des options personnalisées
+const corsOptions = {
+  origin: process.env.FRONT_URL,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  // cors: {
-  //   origin: process.env.FRONT_URL,
-  //   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  //   credentials: true
-  // }
+  cors: {
+    origin: process.env.FRONT_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  }
 });
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors(/*corsOptions*/));
+app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
