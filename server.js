@@ -36,6 +36,15 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
+// Utiliser des cookies sécurisés
+app.use((req, res, next) => {
+  res.cookie('myCookie', 'value', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+  });
+  next();
+});
 
 // Middleware CORS personnalisé pour toutes les routes
 app.use((req, res, next) => {
