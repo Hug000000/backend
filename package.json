@@ -11,7 +11,7 @@
     "prisma": "prisma",
     "start": "node server.js",
     "start:dev": "dotenv -e .env.development -- node server.js",
-    "start:prod": "dotenv -e .env.production -- node server.js"
+    "start:prod": "node server.js"
   },
   "keywords": [],
   "author": "",
