@@ -26,7 +26,14 @@ router.post('/login', async (req, res) => {
             return res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect');
         }
         const token = jwt.sign({ userId: user.idutilisateur }, secretKey, { expiresIn: '1h' });
-        res.cookie('token', token, { httpOnly: true, secure: true });
+
+        const cookieOptions = {
+            httpOnly: true,
+            sameSite: 'Lax',
+            secure: true,
+        };
+
+        res.cookie('token', token, cookieOptions);
         res.status(200).send('Connexion réussie et token stocké dans un cookie');
     } catch (err) {
         console.error(err.message);
