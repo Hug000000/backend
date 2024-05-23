@@ -378,10 +378,15 @@ router.put('/:id',verifyTokenAndGetAdminStatus, async (req, res) => {
 
 // Routeur DELETE pour supprimer un utilisateur
 router.delete('/', authenticateToken, async (req, res) => {
+    console.log('DELETE /utilisateurs/ called');
     const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    console.log('Decoded userId:', userId);
+
     if (!userId) {
+        console.log('Accès non autorisé : userId is missing');
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
         // Récupération de l'utilisateur pour obtenir l'ID de la photo associée
         const user = await prisma.utilisateur.findUnique({
@@ -395,23 +400,29 @@ router.delete('/', authenticateToken, async (req, res) => {
                 trajetsConduits: true
             }
         });
+        console.log('User found:', user);
+
         if (!user) {
+            console.log('Utilisateur non trouvé');
             return res.status(404).send('Utilisateur non trouvé');
         }
 
         // Supprimer les passagers des trajets conduits
         for (const trajet of user.trajetsConduits) {
+            console.log('Deleting passengers for trajet:', trajet.idtrajet);
             await prisma.estPassager.deleteMany({
                 where: { idTrajet: trajet.idtrajet }
             });
         }
 
         // Supprimer les trajets conduits par l'utilisateur
+        console.log('Deleting trajets for userId:', userId);
         await prisma.trajet.deleteMany({
             where: { idConducteur: parseInt(userId) }
         });
 
         // Suppression des avis envoyés et reçus
+        console.log('Deleting avis for userId:', userId);
         await prisma.avis.deleteMany({
             where: { idemetteur: parseInt(userId) }
         });
@@ -420,6 +431,7 @@ router.delete('/', authenticateToken, async (req, res) => {
         });
 
         // Suppression des messages envoyés et reçus
+        console.log('Deleting messages for userId:', userId);
         await prisma.message.deleteMany({
             where: { idemetteur: parseInt(userId) }
         });
@@ -428,36 +440,43 @@ router.delete('/', authenticateToken, async (req, res) => {
         });
 
         // Suppression des trajets en tant que passager
+        console.log('Deleting passenger trajets for userId:', userId);
         await prisma.estPassager.deleteMany({
             where: { idPassager: parseInt(userId) }
         });
 
         // Suppression des voitures associées
+        console.log('Deleting cars for userId:', userId);
         await prisma.voiture.deleteMany({
             where: { idProprietaire: parseInt(userId) }
         });
 
         // Suppression de la photo associée
         if (user.photo) {
+            console.log('Deleting photo for userId:', userId);
             await prisma.photo.delete({
                 where: { idphoto: user.photo.idphoto }
             });
         }
 
         // Suppression de l'utilisateur
+        console.log('Deleting user:', userId);
         await prisma.utilisateur.delete({
             where: { idutilisateur: parseInt(userId) }
         });
 
+        console.log('Utilisateur supprimé avec succès');
         res.status(200).send('Utilisateur supprimé avec succès');
     } catch (err) {
         if (err.code === 'P2025') {
+            console.log('Utilisateur non trouvé durant la suppression');
             return res.status(404).send('Utilisateur non trouvé');
         }
-        console.error(err.message);
+        console.error('Erreur lors de la suppression de l\'utilisateur:', err.message);
         res.status(500).send('Erreur lors de la suppression de l\'utilisateur');
     }
 });
+
 
 // Routeur DELETE pour supprimer un utilisateur
 router.delete('/:id/', verifyTokenAndGetAdminStatus, async (req, res) => {
