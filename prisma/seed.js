@@ -120,7 +120,7 @@ async function main() {
   }
 
   // Lire et encoder l'image en base64
-  const imagePath = path.resolve(__dirname, 'pdp.jpg'); // Ajuster ce chemin si nécessaire
+  const imagePath = path.resolve(__dirname, 'pdp.jpg');
 
   let imageBase64;
   try {
@@ -190,12 +190,12 @@ async function main() {
         numtel: user.numtel,
         motdepasse: hashedPassword,
         estadmin: user.estadmin,
-        photoprofil: createdPhoto.idphoto // Associe l'ID de la photo à l'utilisateur
+        photoprofil: createdPhoto.idphoto
       }
     });
   }
 
-  console.log("Villes et utilisateurs ajoutés avec succès!");
+  //console.log("Villes et utilisateurs ajoutés avec succès!");
 }
 
 main()

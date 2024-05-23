@@ -12,7 +12,7 @@ const normalizeText = (text) => {
         .toLowerCase(); // Conversion en minuscules
 };
 
-// Router GET pour récupérer l'ID de la ville par rapport au nom de la ville
+// Routeur GET pour récupérer l'ID de la ville par rapport au nom de la ville
 router.get('/:nom', async (req, res) => {
     const { nom } = req.params; // Récupération du paramètre 'nom' de l'URL
 
@@ -40,7 +40,7 @@ router.get('/:nom', async (req, res) => {
     }
 });
 
-// Router GET pour récupérer tous les noms de villes
+// Routeur GET pour récupérer tous les noms de villes
 router.get('/', async (req, res) => {
     try {
         const villes = await prisma.ville.findMany({

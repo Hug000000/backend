@@ -7,10 +7,13 @@ const router = express.Router();
 
 // Routeur GET pour récupérer tous les trajets
 router.get('/', verifyTokenAndGetAdminStatus, async (req, res) => {
+    // Vérifie que l'utilisateur est admin
     if (!req.userIsAdmin) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
+        // Récupère tous les trajets
         const trajets = await prisma.trajet.findMany();
         res.status(200).json(trajets);
     } catch (err) {
@@ -22,10 +25,13 @@ router.get('/', verifyTokenAndGetAdminStatus, async (req, res) => {
 // Routeur GET pour récupérer les trajets où l'utilisateur est conducteur
 router.get('/conducteur/', authenticateToken, async (req, res) => {
     const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
     if (!userId) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
+        // Récupère les trajets conducteur
         const trajets = await prisma.trajet.findMany({
             where: { idConducteur: parseInt(userId) },
             include: {
@@ -54,11 +60,14 @@ router.get('/conducteur/', authenticateToken, async (req, res) => {
 
 // Routeur GET pour récupérer les trajets où l'utilisateur est passager
 router.get('/passager', authenticateToken, async (req, res) => {
-    const { userId } = req.decoded;
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
     if (!userId) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
+        // Récupère les trajets passager
         const trajets = await prisma.trajet.findMany({
             where: {
                 passagers: {
@@ -94,7 +103,7 @@ router.get('/search', async (req, res) => {
     const { villeDepart, villeArrivee, dateDepart } = req.query;
 
     try {
-        // Construire les conditions de recherche basées sur les paramètres fournis
+        // Construit les conditions de recherche basées sur les paramètres fournis
         const whereClause = {};
         if (villeDepart) {
             whereClause.idvilledepart = parseInt(villeDepart);
@@ -106,7 +115,7 @@ router.get('/search', async (req, res) => {
             const date = new Date(dateDepart);
             whereClause.heuredepart = {
                 gte: date,
-                lt: new Date(date.getTime() + 24 * 60 * 60 * 1000) // La date suivante
+                lt: new Date(date.getTime() + 24 * 60 * 60 * 1000) // La date du jour suivant
             };
         } else {
             const now = new Date();
@@ -115,6 +124,7 @@ router.get('/search', async (req, res) => {
             };
         }
 
+        // Trouve les trajets qui correspondent
         const trajets = await prisma.trajet.findMany({
             where: whereClause,
             include: {
@@ -139,6 +149,7 @@ router.get('/search', async (req, res) => {
 // Routeur GET pour récupérer les détails d'un trajet spécifique
 router.get('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
+
     try {
         const trajet = await prisma.trajet.findUnique({
             where: { idtrajet: parseInt(id) },
@@ -177,10 +188,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Routeur POST pour ajouter un nouveau trajet
 router.post('/', authenticateToken, async (req, res) => {
     const { description, idvilledepart, idvillearrivee, dateDepart, heureDepart, dateArrivee, heureArrivee, prix, plaqueimatVoiture, placesDisponibles } = req.body;
-    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    const { userId } = req.decoded;  // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
     if (!userId) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
         const heuredepart = new Date(`${dateDepart}T${heureDepart}`);
         const heurearrivee = new Date(`${dateArrivee}T${heureArrivee}`);
@@ -208,7 +221,12 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { description, idvilledepart, idvillearrivee, dateDepart, heureDepart, dateArrivee, heureArrivee, prix, plaqueimatVoiture, placesDisponibles } = req.body;
-    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    const { userId } = req.decoded;  // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
+
     try {
         const trajet = await prisma.trajet.findUnique({
             where: { idtrajet: parseInt(id) },
@@ -249,6 +267,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;  // Identifiant du trajet
     const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
 
     try {
         // Récupérer le trajet pour vérifier l'identité du conducteur
@@ -275,6 +297,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         await prisma.trajet.delete({
             where: { idtrajet: parseInt(id) }
         });
+
+        req.io.emit('trajet_supprime', { trajetId: id });
         
         res.status(200).send('Trajet supprimé avec succès');
     } catch (err) {
@@ -291,7 +315,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 router.post('/join/:id', authenticateToken, async (req, res) => {
     const { id } = req.params; // Identifiant du trajet
     const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
-    
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
+
     try {
         // Vérifier si l'utilisateur est déjà passager
         const existingPassager = await prisma.estPassager.findFirst({
@@ -310,6 +338,8 @@ router.post('/join/:id', authenticateToken, async (req, res) => {
             }
         });
 
+        req.io.emit('passager_ajoute', { trajetId: id, userId });
+
         res.status(201).json(nouveauPassager);
     } catch (err) {
         console.error(err.message);
@@ -321,6 +351,10 @@ router.post('/join/:id', authenticateToken, async (req, res) => {
 router.post('/leave/:id', authenticateToken, async (req, res) => {
     const { id } = req.params; // Identifiant du trajet
     const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
 
     try {
         // Supprimer le passager du trajet
@@ -334,6 +368,8 @@ router.post('/leave/:id', authenticateToken, async (req, res) => {
         if (deletedPassager.count === 0) {
             return res.status(404).send('Le passager n\'est pas trouvé dans ce trajet');
         }
+
+        req.io.emit('passager_supprime', { trajetId: id, userId });
 
         res.status(200).json({ message: 'Passager supprimé du trajet avec succès' });
     } catch (err) {

@@ -15,18 +15,22 @@ router.post('/login', async (req, res) => {
         return res.status(400).send('Nom d\'utilisateur et mot de passe requis');
     }
     try {
+        // Vérifie que l'utilisateur existe
         const user = await prisma.utilisateur.findFirst({
             where: { username }
         });
         if (!user) {
             return res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect');
         }
+
+        // Vérifie que le mot de passe est correct
         const motdepasseMatch = await bcrypt.compare(motdepasse, user.motdepasse);
         if (!motdepasseMatch) {
             return res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect');
         }
-        const token = jwt.sign({ userId: user.idutilisateur }, secretKey, { expiresIn: '1h' });
 
+        // Crée le token et le cookie
+        const token = jwt.sign({ userId: user.idutilisateur }, secretKey, { expiresIn: '1h' });
         const cookieOptions = {
             httpOnly: true,
             sameSite: 'Lax',
@@ -44,6 +48,7 @@ router.post('/login', async (req, res) => {
 // Route GET pour vérifier le cookie d'authentification
 router.get('/cookie', (req, res) => {
     const token = req.cookies.token;
+    // Vérifie que le token existe et vérifie qu'il est valide
     if (!token) {
         return res.status(401).send('Aucun cookie d\'authentification trouvé');
     }
@@ -57,6 +62,7 @@ router.get('/cookie', (req, res) => {
 
 // Route POST pour supprimer le cookie d'authentification
 router.post('/logout', (req, res) => {
+    // Supprime le cookie et le token par la meme occasion
     res.clearCookie('token');
     res.send('Déconnexion réussie et cookie supprimé');
 });
@@ -64,10 +70,11 @@ router.post('/logout', (req, res) => {
 // Fonction pour s'authentifier à un utilisateur pour avoir les droits d'agir dessus
 export function authenticateToken(req, res, next) {
     const token = req.cookies.token;
+    // Vérifie que le token existe et vérifie qu'il est valide puis récupère les informations
     if (token == null) return res.sendStatus(401);
     jwt.verify(token, secretKey, (err, user) => {
         if (err) return res.sendStatus(403);
-        req.decoded = user; //je récupère les données stockés dans le token pour les analyser plus tard
+        req.decoded = user; // Récupère les données stockés dans le token pour les analyser plus tard
         next();
     });
 }
@@ -75,6 +82,7 @@ export function authenticateToken(req, res, next) {
 // Middleware pour extraire et vérifier le token JWT du cookie
 export const verifyTokenAndGetAdminStatus = async (req, res, next) => {
     const token = req.cookies.token;
+    // Vérifie que le token existe et vérifie qu'il est valide puis récupère les informations
     if (!token) {
         return res.status(401).send('Token absent, authentification requise');
     }
@@ -150,10 +158,12 @@ router.post('/', async (req, res) => {
 
 // Routeur GET pour récupérer tous les utilisateurs avec leurs photos
 router.get('/', verifyTokenAndGetAdminStatus, async (req, res) => {
+    // Vérifie que l'utilisateur est admin
     if (!req.userIsAdmin) {
         return res.status(403).send('Accès non autorisé');
     }
     try {
+        // Récupère toutes les informations
         const usersWithPhotos = await prisma.utilisateur.findMany({
             include: {
                 photo: {
@@ -172,16 +182,16 @@ router.get('/', verifyTokenAndGetAdminStatus, async (req, res) => {
 
 // Route GET pour récupérer toutes les informations de l'utilisateur
 router.get('/informationsWithPassword', authenticateToken, async (req, res) => {
-    const { userId } = req.decoded;
-    // Vérifiez que `userId` est un nombre entier valide
-    const userIdInt = parseInt(userId, 10);
-    if (isNaN(userIdInt)) {
-      return res.status(403).send('Accès non autorisé, identifiant manquant ou invalide dans le token.');
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
     }
+
     try {
       // Utilisez `userIdInt` comme un entier
       const user = await prisma.utilisateur.findUnique({
-        where: { idutilisateur: userIdInt },
+        where: { idutilisateur: parseInt(userId) },
         include: {
           photo: {
             select: { image: true },
@@ -203,7 +213,9 @@ router.get('/informationsWithPassword', authenticateToken, async (req, res) => {
 // Routeur GET pour récupérer toutes les informations de l'utilisateur, à l'exception du mot de passe
 router.get('/:id/', authenticateToken, async (req, res) => {
     const { id } = req.params;
+
     try {
+        // Récupère toutes les informations sauf le mdp
         const user = await prisma.utilisateur.findUnique({
             where: { idutilisateur: parseInt(id) },
             select: {
@@ -233,7 +245,11 @@ router.get('/:id/', authenticateToken, async (req, res) => {
 // Routeur PUT pour mettre à jour les informations générales d'un utilisateur (sans mot de passe ni image)
 router.put('/informations', authenticateToken, async (req, res) => {
     const { nom, prenom, age, username, numtel } = req.body;
-    const { userId } = req.decoded;
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
 
     try {
         // Mettre à jour les informations générales
@@ -258,7 +274,11 @@ router.put('/informations', authenticateToken, async (req, res) => {
 // Routeur PUT pour mettre à jour uniquement l'image de l'utilisateur authentifié
 router.put('/photo', authenticateToken, async (req, res) => {
     const { image } = req.body;
-    const { userId } = req.decoded;
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
 
     try {
         // Trouver l'utilisateur pour récupérer l'ID de la photo associée
@@ -291,7 +311,11 @@ router.put('/photo', authenticateToken, async (req, res) => {
 // Routeur PUT pour mettre à jour le mot de passe de l'utilisateur authentifié
 router.put('/password', authenticateToken, async (req, res) => {
     const { oldPassword, newPassword } = req.body;
-    const { userId } = req.decoded;
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
 
     try {
         // Trouver l'utilisateur
@@ -329,6 +353,7 @@ router.put('/password', authenticateToken, async (req, res) => {
 router.put('/:id',verifyTokenAndGetAdminStatus, async (req, res) => {
     const { id } = req.params;
     const { nom, prenom, age, username, numtel, motdepasse, image } = req.body;
+    // Vérifie que l'utilisateur est admin
     if (!req.userIsAdmin) {
         return res.status(403).send('Accès non autorisé');
     }
@@ -379,9 +404,11 @@ router.put('/:id',verifyTokenAndGetAdminStatus, async (req, res) => {
 // Routeur DELETE pour supprimer un utilisateur
 router.delete('/', authenticateToken, async (req, res) => {
     const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
     if (!userId) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
         // Récupération de l'utilisateur pour obtenir l'ID de la photo associée
         const user = await prisma.utilisateur.findUnique({
@@ -462,9 +489,11 @@ router.delete('/', authenticateToken, async (req, res) => {
 // Routeur DELETE pour supprimer un utilisateur
 router.delete('/:id/', verifyTokenAndGetAdminStatus, async (req, res) => {
     const { id } = req.params;
+    // Vérifie que l'utilisateur est admin
     if (!req.userIsAdmin) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
         // Récupération de l'utilisateur pour obtenir l'ID de la photo associée
         const user = await prisma.utilisateur.findUnique({
@@ -551,10 +580,12 @@ router.get('/my-admin-status', verifyTokenAndGetAdminStatus, (req, res) => {
 router.put('/:id/estadmin', verifyTokenAndGetAdminStatus, async (req, res) => {
     const { id } = req.params;
     const { estadmin } = req.body;
+    // Vérifie que l'utilisateur est admin
     if (!req.userIsAdmin) {
         return res.status(403).send('Accès non autorisé');
     }
     try {
+        // Met à jour le estadmin
         const updatedUser = await prisma.utilisateur.update({
             where: { idutilisateur: parseInt(id) },
             data: {

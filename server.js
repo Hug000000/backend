@@ -7,13 +7,12 @@ import { Server } from 'socket.io';
 import reqUtilisateurs from './requete/reqUtilisateurs.js';
 import reqVoiture from './requete/reqVoiture.js';
 import reqAvis from './requete/reqAvis.js';
-import reqMessage from './requete/reqMessage.js';
 import reqTrajet from './requete/reqTrajet.js';
 import reqVille from './requete/reqVille.js';
 import cors from 'cors';
 import 'dotenv/config';
 
-// Configurer CORS avec des options personnalisées
+// Configurer CORS
 const corsOptions = {
   origin: process.env.FRONT_URL,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -37,7 +36,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-// Middleware CORS personnalisé pour toutes les routes
+// Middleware CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', process.env.FRONT_URL);
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -50,38 +49,38 @@ app.use((req, res, next) => {
   }
 });
 
-// Attach io to the request object
+// Attache io aux requetes
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
+// Met en place les routes
 app.use('/utilisateurs', reqUtilisateurs);
 app.use('/voiture', reqVoiture);
 app.use('/avis', reqAvis);
-app.use('/message', reqMessage);
 app.use('/trajets', reqTrajet);
 app.use('/ville', reqVille);
 
 // Le serveur HTTP écoute sur le port PORT
 const port = process.env.PORT;
 server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  //console.log(`Serveur lancé sur l'adresse http://localhost:${port}`);
 });
 
 // Le serveur WebSocket écoute sur le port WS_PORT
 const wsPort = process.env.WS_PORT;
 const wsServer = http.createServer();
 wsServer.listen(wsPort, () => {
-  console.log(`WebSocket Server running on http://localhost:${wsPort}`);
+  //console.log(`WebSocket lancé à l'adresse http://localhost:${wsPort}`);
 });
 
 io.attach(wsServer);
 
 io.on('connection', (socket) => {
-  console.log('Un utilisateur est connecté');
+  //console.log('Un utilisateur est connecté');
 
   socket.on('disconnect', () => {
-    console.log('Un utilisateur est déconnecté');
+    //console.log('Un utilisateur est déconnecté');
   });
 });

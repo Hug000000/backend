@@ -5,12 +5,15 @@ import { verifyTokenAndGetAdminStatus } from './reqUtilisateurs.js';
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// Route GET pour récupérer toutes les voitures
+// Routeur GET pour récupérer toutes les voitures
 router.get('/', verifyTokenAndGetAdminStatus, async (req, res) => {
+    // Vérifie si l'utilisateur est admin
     if (!req.userIsAdmin) {
         return res.status(403).send('Accès non autorisé');
     }
+
     try {
+        // Récupère toutes les voitures
         const voitures = await prisma.voiture.findMany();
         res.status(200).json(voitures);
     } catch (err) {
@@ -19,13 +22,13 @@ router.get('/', verifyTokenAndGetAdminStatus, async (req, res) => {
     }
 });
 
-// Route GET récupérer toutes les voitures de l'utilisateur
+// Routeur GET récupérer toutes les voitures de l'utilisateur
 router.get('/par-proprietaire', authenticateToken, async (req, res) => {
-    const { userId } = req.decoded;
-  
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
     if (!userId) {
-      return res.status(403).send('Accès non autorisé.');
-    }
+        return res.status(403).send('Accès non autorisé');
+    } 
   
     try {
       // Récupérer toutes les voitures en filtrant par `idProprietaire`
@@ -41,10 +44,12 @@ router.get('/par-proprietaire', authenticateToken, async (req, res) => {
     }
   });  
 
-// Route GET pour récupérer une voiture spécifique par la plaque d'immatriculation
+// Routeur GET pour récupérer une voiture spécifique par la plaque d'immatriculation
 router.get('/:plaque', authenticateToken, async (req, res) => {
     const { plaque } = req.params;
+
     try {
+        //Récupère la voiture 
         const voiture = await prisma.voiture.findUnique({
             where: { plaqueimat: plaque }
         });
@@ -59,15 +64,17 @@ router.get('/:plaque', authenticateToken, async (req, res) => {
     }
 });
 
-// Route POST pour ajouter une nouvelle voiture
+// Routeur POST pour ajouter une nouvelle voiture
 router.post('/', authenticateToken, async (req, res) => {
     const { marque, modele, couleur, plaqueimat } = req.body;
-    const { userId } = req.decoded;
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
     if (!userId) {
-      return res.status(403).send('Accès non autorisé.');
+        return res.status(403).send('Accès non autorisé');
     }
+
     try {
-      // Créer la nouvelle voiture dans la base de données
+      // Crée la nouvelle voiture dans la base de données
       const nouvelleVoiture = await prisma.voiture.create({
         data: {
           marque,
@@ -75,7 +82,7 @@ router.post('/', authenticateToken, async (req, res) => {
           couleur,
           plaqueimat,
           proprietaire: {
-            connect: { idutilisateur: userId } // Relie l'utilisateur en utilisant `connect`
+            connect: { idutilisateur: userId }
           }
         }
       });
@@ -88,14 +95,18 @@ router.post('/', authenticateToken, async (req, res) => {
   
   
 
-// Route PUT pour mettre à jour une voiture en fonction de sa plaque d'immatriculation
+// Routeur PUT pour mettre à jour une voiture en fonction de sa plaque d'immatriculation
 router.put('/:plaque', authenticateToken, async (req, res) => {
     const { marque, modele, couleur } = req.body;
     const { plaque } = req.params;
-    const { userId } = req.decoded;
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
   
     try {
-      // Vérifiez que la voiture appartient à l'utilisateur connecté
+      // Vérifie que la voiture appartient à l'utilisateur connecté
       const voiture = await prisma.voiture.findUnique({
         where: { plaqueimat: plaque },
       });
@@ -104,7 +115,7 @@ router.put('/:plaque', authenticateToken, async (req, res) => {
         return res.status(403).send('Accès non autorisé.');
       }
   
-      // Mettez à jour la voiture
+      // Met à jour la voiture
       const voitureUpdated = await prisma.voiture.update({
         where: { plaqueimat: plaque },
         data: {
@@ -125,13 +136,17 @@ router.put('/:plaque', authenticateToken, async (req, res) => {
     }
 });
   
-// Route DELETE pour supprimer une voiture en fonction de sa plaque d'immatriculation
+// Routeur DELETE pour supprimer une voiture en fonction de sa plaque d'immatriculation
 router.delete('/:plaque', authenticateToken, async (req, res) => {
     const { plaque } = req.params;
-    const { userId } = req.decoded;
-  
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    // Vérifie que l'utilisateur est connecté
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
+
     try {
-      // Vérifiez que la voiture appartient à l'utilisateur connecté
+      // Vérifie que la voiture appartient à l'utilisateur connecté
       const voiture = await prisma.voiture.findUnique({
         where: { plaqueimat: plaque },
       });
@@ -140,7 +155,7 @@ router.delete('/:plaque', authenticateToken, async (req, res) => {
         return res.status(403).send('Accès non autorisé.');
       }
   
-      // Supprimez la voiture
+      // Supprime la voiture
       await prisma.voiture.delete({
         where: { plaqueimat: plaque },
       });
