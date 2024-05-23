@@ -378,11 +378,86 @@ router.put('/:id',verifyTokenAndGetAdminStatus, async (req, res) => {
 
 // Routeur DELETE pour supprimer un utilisateur
 router.delete('/', authenticateToken, async (req, res) => {
+    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+    if (!userId) {
+        return res.status(403).send('Accès non autorisé');
+    }
+    try {
+        // Récupération de l'utilisateur pour obtenir l'ID de la photo associée
+        const user = await prisma.utilisateur.findUnique({
+            where: { idutilisateur: parseInt(userId) },
+            include: {
+                photo: {
+                    select: {
+                        idphoto: true
+                    }
+                },
+                trajetsConduits: true
+            }
+        });
+        if (!user) {
+            return res.status(404).send('Utilisateur non trouvé');
+        }
+
+        // Supprimer les passagers des trajets conduits
+        for (const trajet of user.trajetsConduits) {
+            await prisma.estPassager.deleteMany({
+                where: { idTrajet: trajet.idtrajet }
+            });
+        }
+
+        // Supprimer les trajets conduits par l'utilisateur
+        await prisma.trajet.deleteMany({
+            where: { idConducteur: parseInt(userId) }
+        });
+
+        // Suppression des avis envoyés et reçus
+        await prisma.avis.deleteMany({
+            where: { idemetteur: parseInt(userId) }
+        });
+        await prisma.avis.deleteMany({
+            where: { iddestinataire: parseInt(userId) }
+        });
+
+        // Suppression des messages envoyés et reçus
+        await prisma.message.deleteMany({
+            where: { idemetteur: parseInt(userId) }
+        });
+        await prisma.message.deleteMany({
+            where: { iddestinataire: parseInt(userId) }
+        });
+
+        // Suppression des trajets en tant que passager
+        await prisma.estPassager.deleteMany({
+            where: { idPassager: parseInt(userId) }
+        });
+
+        // Suppression des voitures associées
+        await prisma.voiture.deleteMany({
+            where: { idProprietaire: parseInt(userId) }
+        });
+
+        // Suppression de la photo associée
+        if (user.photo) {
+            await prisma.photo.delete({
+                where: { idphoto: user.photo.idphoto }
+            });
+        }
+
+        // Suppression de l'utilisateur
+        await prisma.utilisateur.delete({
+            where: { idutilisateur: parseInt(userId) }
+        });
 
         res.status(200).send('Utilisateur supprimé avec succès');
-
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).send('Utilisateur non trouvé');
+        }
+        console.error(err.message);
+        res.status(500).send('Erreur lors de la suppression de l\'utilisateur');
+    }
 });
-
 
 // Routeur DELETE pour supprimer un utilisateur
 router.delete('/:id/', verifyTokenAndGetAdminStatus, async (req, res) => {
