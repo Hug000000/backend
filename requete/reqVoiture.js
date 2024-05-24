@@ -66,34 +66,45 @@ router.get('/:plaque', authenticateToken, async (req, res) => {
 
 // Routeur POST pour ajouter une nouvelle voiture
 router.post('/', authenticateToken, async (req, res) => {
-    const { marque, modele, couleur, plaqueimat } = req.body;
-    const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
-    // Vérifie que l'utilisateur est connecté
-    if (!userId) {
-        return res.status(403).send('Accès non autorisé');
+  const { marque, modele, couleur, plaqueimat } = req.body;
+  const { userId } = req.decoded; // Identifiant d'utilisateur extrait du token JWT
+
+  // Vérifie que l'utilisateur est connecté
+  if (!userId) {
+      return res.status(403).send('Accès non autorisé');
+  }
+
+  try {
+    // Vérifie si une voiture avec la même plaque d'immatriculation existe déjà
+    const voitureExistante = await prisma.voiture.findUnique({
+      where: {
+        plaqueimat: plaqueimat
+      }
+    });
+
+    if (voitureExistante) {
+      return res.status(409).send("Une voiture avec cette plaque d'immatriculation existe déjà.");
     }
 
-    try {
-      // Crée la nouvelle voiture dans la base de données
-      const nouvelleVoiture = await prisma.voiture.create({
-        data: {
-          marque,
-          modele,
-          couleur,
-          plaqueimat,
-          proprietaire: {
-            connect: { idutilisateur: userId }
-          }
+    // Crée la nouvelle voiture dans la base de données
+    const nouvelleVoiture = await prisma.voiture.create({
+      data: {
+        marque,
+        modele,
+        couleur,
+        plaqueimat,
+        proprietaire: {
+          connect: { idutilisateur: userId }
         }
-      });
-      res.status(201).json(nouvelleVoiture);
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send("Erreur lors de l'ajout de la voiture.");
-    }
-  });
-  
-  
+      }
+    });
+
+    res.status(201).json(nouvelleVoiture);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Erreur lors de l'ajout de la voiture.");
+  }
+});
 
 // Routeur PUT pour mettre à jour une voiture en fonction de sa plaque d'immatriculation
 router.put('/:plaque', authenticateToken, async (req, res) => {
