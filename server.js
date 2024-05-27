@@ -30,6 +30,18 @@ const io = new Server(server, {
   }
 });
 
+const rateLimit = require('express-rate-limit');
+
+// Créer une instance de middleware de limitation de taux
+const limiter = rateLimit({
+  windowMs: 3 * 1000,
+  max: 5, // Limite chaque IP à 100 requêtes par fenêtre de 15 minutes
+  standardHeaders: true, // Retourne les informations de taux de limite dans les entêtes `RateLimit-*`
+  legacyHeaders: false, // Désactive les entêtes `X-RateLimit-*`
+});
+
+app.use(limiter);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
