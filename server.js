@@ -65,7 +65,7 @@ app.use('/ville', reqVille);
 // Le serveur HTTP écoute sur le port PORT
 const port = process.env.PORT;
 server.listen(port, () => {
-  //console.log(`Serveur lancé sur l'adresse http://localhost:${port}`);
+  console.log(`Serveur lancé sur l'adresse http://localhost:${port}`);
 });
 
 // Le serveur WebSocket écoute sur le port WS_PORT
@@ -78,9 +78,9 @@ wsServer.listen(wsPort, () => {
 io.attach(wsServer);
 
 io.on('connection', (socket) => {
-  //console.log('Un utilisateur est connecté');
+  console.log('Un utilisateur est connecté');
 
   socket.on('disconnect', () => {
-    //console.log('Un utilisateur est déconnecté');
+    console.log('Un utilisateur est déconnecté');
   });
 });
